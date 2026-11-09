@@ -1,0 +1,31 @@
+name: Avisos de YouTube
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: avisos
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node avisos.js
+        env:
+          DISCORD_WEBHOOK_VIDEOS: ${{ secrets.DISCORD_WEBHOOK_VIDEOS }}
+          DISCORD_WEBHOOK_SHORTS: ${{ secrets.DISCORD_WEBHOOK_SHORTS }}
+      - name: Guardar videos ya avisados
+        if: always()
+        run: |
+          git config user.name "avisos-takero"
+          git config user.email "avisos-takero@users.noreply.github.com"
+          git add state.json 2>/dev/null || exit 0
+          git diff --cached --quiet || (git commit -m "Actualizar videos avisados" && git push)
